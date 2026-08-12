@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 output_dir = Path(__file__).resolve().parent
 plot_dir = output_dir / "plots"
-plot_dir.mkdir(exist_ok=True)
+plot_dir.mkdir(parents=True, exist_ok=True)
 
 
 def save_plot(name):
@@ -27,7 +27,7 @@ output_path = output_dir / "titanic.csv"
 df.to_csv(output_path, index=False)   # offline fallback
 
 print("=== Dataset Info ===")
-print(df.info())
+df.info()
 print("\n=== Dataset Shape ===", df.shape)
 print("\n=== Dataset Description ===")
 print(df.describe(include='all'))
@@ -41,27 +41,31 @@ print(missing[missing > 0])
 # Task 2: Missing value handling
 # -------------------------------
 clean_df = df.copy()
-for col in clean_df.columns:
-    miss_pct = clean_df[col].isnull().mean() * 100
+print("\n=== Missing Value Handling Decisions ===")
+for col in df.columns:
+    miss_pct = df[col].isnull().mean() * 100
     if miss_pct == 0:
         continue
-    elif miss_pct < 5:
+    if miss_pct < 5:
         clean_df = clean_df.dropna(subset=[col])
-        print(f"Dropped rows for {col} ({miss_pct:.2f}% missing)")
+        print(f"{col}: {miss_pct:.2f}% missing → drop rows because missingness is low and row removal preserves data quality.")
     elif miss_pct <= 30:
-        if clean_df[col].dtype in ['float64','int64']:
-            clean_df[col].fillna(clean_df[col].median(), inplace=True)
-            print(f"Imputed median for {col} ({miss_pct:.2f}% missing)")
+        if pd.api.types.is_numeric_dtype(df[col]):
+            clean_df[col].fillna(df[col].median(), inplace=True)
+            print(f"{col}: {miss_pct:.2f}% missing → impute with median because numeric imputation is reliable at this rate.")
         else:
-            clean_df[col].fillna(clean_df[col].mode()[0], inplace=True)
-            print(f"Imputed mode for {col} ({miss_pct:.2f}% missing)")
+            clean_df[col].fillna(df[col].mode()[0], inplace=True)
+            print(f"{col}: {miss_pct:.2f}% missing → impute with mode because categorical imputation is reasonable at this rate.")
     else:
-        if clean_df[col].dtype == 'object':
-            clean_df[col] = clean_df[col].fillna("Missing")
-            print(f"Encoded 'Missing' category for {col} ({miss_pct:.2f}% missing)")
-        else:
+        if col == 'deck':
             clean_df.drop(columns=[col], inplace=True)
-            print(f"Dropped column {col} ({miss_pct:.2f}% missing)")
+            print(f"{col}: {miss_pct:.2f}% missing → drop column because missingness is too high for reliable imputation and the feature is not essential for the core analysis.")
+        elif pd.api.types.is_numeric_dtype(df[col]):
+            clean_df[col].fillna(df[col].median(), inplace=True)
+            print(f"{col}: {miss_pct:.2f}% missing → impute numeric values with median despite high missingness, preserving the signal where possible.")
+        else:
+            clean_df[col] = clean_df[col].fillna("Missing")
+            print(f"{col}: {miss_pct:.2f}% missing → encode 'Missing' as its own category because the column is categorical and dropping it would lose useful information.")
 
 print("\nAfter Cleaning, Shape:", clean_df.shape)
 
@@ -99,14 +103,24 @@ else:
 # -------------------------------
 # Task 4: Bivariate analysis
 # -------------------------------
-survival_by_sex = clean_df.groupby('sex')['survived'].mean()
-print("\nSurvival Rate by Sex:\n", survival_by_sex)
+print("\nSurvival Rate by Sex (boolean masking):")
+for sex in ['male', 'female']:
+    mask = clean_df['sex'] == sex
+    rate = clean_df.loc[mask, 'survived'].mean()
+    print(f"  {sex}: {rate:.3f}")
 
-survival_by_pclass = clean_df.groupby('pclass')['survived'].mean()
-print("\nSurvival Rate by Pclass:\n", survival_by_pclass)
+print("\nSurvival Rate by Pclass (boolean masking):")
+for pclass in sorted(clean_df['pclass'].unique()):
+    mask = clean_df['pclass'] == pclass
+    rate = clean_df.loc[mask, 'survived'].mean()
+    print(f"  Pclass {pclass}: {rate:.3f}")
 
-survival_by_sex_pclass = clean_df.groupby(['sex','pclass'])['survived'].mean()
-print("\nSurvival Rate by Sex & Pclass:\n", survival_by_sex_pclass)
+print("\nSurvival Rate by Sex and Pclass (boolean masking):")
+for sex in ['male', 'female']:
+    for pclass in sorted(clean_df['pclass'].unique()):
+        mask = (clean_df['sex'] == sex) & (clean_df['pclass'] == pclass)
+        rate = clean_df.loc[mask, 'survived'].mean()
+        print(f"  {sex}, Pclass {pclass}: {rate:.3f}")
 
 # Correlation matrix (6 specified columns)
 corr_cols = ['survived','pclass','age','sibsp','parch','fare']
@@ -121,7 +135,17 @@ plt.show()
 abs_corr = corr_matrix.abs()
 abs_corr = abs_corr.where(~np.eye(len(abs_corr), dtype=bool), 0)
 strong_pairs = abs_corr.unstack().sort_values(ascending=False).drop_duplicates()
-print("\nTop 2 strongest correlations:\n", strong_pairs.head(2))
+print("\nTop 2 strongest correlations:")
+for (a, b), value in strong_pairs.head(2).items():
+    corr_value = corr_matrix.loc[a, b]
+    print(f"  {a} vs {b}: correlation = {corr_value:.3f} (abs={abs(value):.3f})")
+print("\nInterpretation:")
+if not strong_pairs.empty:
+    (a1, b1), value1 = strong_pairs.head(1).items().__iter__().__next__()
+    print(f"  The strongest relationship is between {a1} and {b1}, indicating that these two numeric features move together most strongly in the dataset.")
+if len(strong_pairs) > 1:
+    (a2, b2), value2 = strong_pairs.iloc[1:2].items().__iter__().__next__()
+    print(f"  The second strongest relationship is between {a2} and {b2}, showing the next most important numeric association among the selected features.")
 
 # -------------------------------
 # Task 5: Multivariate data story
