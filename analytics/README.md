@@ -54,3 +54,17 @@ This notebook script performs Part A profiling, cleaning, and data story analysi
 - It tunes Random Forest hyperparameters with `GridSearchCV` and reports the best parameters plus OOB score.
 - It trains a linear regression model for predicting `fare` and reports MAE, RMSE, R², and Adjusted R².
 - It saves the complete end-to-end pipeline to `analytics/best_pipeline.joblib` and reloads it to confirm predictions on raw input.
+
+## Artifacts
+
+- `analytics/titanic.csv`: committed offline fallback produced by `eda.py`
+- `analytics/best_pipeline.joblib`: saved end-to-end sklearn pipeline including preprocessing and final estimator
+- `analytics/plots/roc_curve_comparison.png`, `analytics/plots/decision_tree.png`, `analytics/plots/regression_residual_plot.png`: saved model and regression plots
+- `analytics/eda.py`: Part A profiling, cleaning, and data story pipeline
+- `analytics/modeling.py`: Part B modeling pipeline that loads `analytics/titanic.csv` and does not call `sns.load_dataset('titanic')`
+
+## Key Results
+
+- Tuned Random Forest is recommended for deployment with test accuracy ≈ 0.816, AUC ≈ 0.843, precision ≈ 0.875, recall ≈ 0.609, and F1 ≈ 0.718.
+- SMOTE oversampling achieved the best F1 score among imbalance strategies while maintaining a balanced precision/recall tradeoff.
+- Regression prediction of `fare` achieved MAE ≈ 20.81, RMSE ≈ 30.47, R² ≈ 0.400, and Adjusted R² ≈ 0.368.

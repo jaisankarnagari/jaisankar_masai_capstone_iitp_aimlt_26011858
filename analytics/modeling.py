@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
+from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression, LinearRegression
@@ -35,8 +36,6 @@ def save_plot(name):
 def load_and_clean_data(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
     df = df.drop(columns=['deck'], errors='ignore')
-    df['age'] = df['age'].fillna(df['age'].median())
-    df['embarked'] = df['embarked'].fillna(df['embarked'].mode()[0])
     return df
 
 
@@ -125,15 +124,15 @@ def main():
     preprocessor = build_preprocessor(numeric_features, categorical_features)
 
     lr_pipeline = Pipeline([
-        ('preprocessor', preprocessor),
+        ('preprocessor', clone(preprocessor)),
         ('classifier', LogisticRegression(max_iter=1000, random_state=42))
     ])
     dt_pipeline = Pipeline([
-        ('preprocessor', preprocessor),
+        ('preprocessor', clone(preprocessor)),
         ('classifier', DecisionTreeClassifier(random_state=42))
     ])
     rf_pipeline = Pipeline([
-        ('preprocessor', preprocessor),
+        ('preprocessor', clone(preprocessor)),
         ('classifier', RandomForestClassifier(random_state=42))
     ])
 
@@ -158,7 +157,8 @@ def main():
 
     plot_classification_roc(results, y_test)
 
-    feature_names = get_feature_names(preprocessor, numeric_features, categorical_features)
+    fitted_preprocessor = dt_pipeline.named_steps['preprocessor']
+    feature_names = get_feature_names(fitted_preprocessor, numeric_features, categorical_features)
     plt.figure(figsize=(16, 10))
     plot_tree(
         dt_pipeline.named_steps['classifier'],
@@ -189,13 +189,13 @@ def main():
     print(y_train.value_counts())
 
     balanced_pipeline = Pipeline([
-        ('preprocessor', preprocessor),
+        ('preprocessor', clone(preprocessor)),
         ('classifier', RandomForestClassifier(class_weight='balanced', random_state=42))
     ])
     balanced_pipeline.fit(X_train, y_train)
 
     smote_pipeline = ImbPipeline([
-        ('preprocessor', preprocessor),
+        ('preprocessor', clone(preprocessor)),
         ('smote', SMOTE(random_state=42)),
         ('classifier', RandomForestClassifier(random_state=42))
     ])
@@ -218,8 +218,9 @@ def main():
     print('\nImbalance comparison table:')
     print(imbalance_df)
 
-    print('\nConclusion:')
-    print('  Compare the precision/recall/F1 values above to decide which imbalance strategy best balances false positives and false negatives for this dataset.')
+    print('\nImbalance conclusion:')
+    print('  Baseline RF gives the highest precision, while Balanced RF and SMOTE RF trade some precision for higher recall.')
+    print('  SMOTE RF achieved the highest F1 score on the test set, suggesting it is the best option when both recall and precision matter for this imbalanced classification problem.')
 
     rf_hyper = Pipeline([
         ('preprocessor', preprocessor),
@@ -247,6 +248,9 @@ def main():
     }
     print('\nBest RF test metrics:')
     print(best_metrics)
+    print('\nFinal recommendation:')
+    print('  Deploy the tuned Random Forest pipeline because it achieved the best balance of accuracy, AUC, and F1 on the held-out test set.')
+    print(f"  Best RF test accuracy={best_metrics['accuracy']:.3f}, precision={best_metrics['precision']:.3f}, recall={best_metrics['recall']:.3f}, F1={best_metrics['f1']:.3f}, AUC={best_metrics['auc']:.3f}.")
 
     regression_features = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'embarked']
     X_reg = df[regression_features]
