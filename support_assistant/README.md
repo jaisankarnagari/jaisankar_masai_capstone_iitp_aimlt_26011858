@@ -31,6 +31,8 @@ curl -X POST "http://127.0.0.1:8000/query" -H "Content-Type: application/json" -
 ```
 
 Notes
-- The ingestion script uses `sentence-transformers/all-MiniLM-L6-v2` and ChromaDB to persist embeddings locally.
+- The ingestion script uses `sentence-transformers/all-MiniLM-L6-v2` and ChromaDB (v0.4+) to persist embeddings locally.
+- The code has been updated to use ChromaDB's new `PersistentClient` API (replacing deprecated Settings-based configuration).
 - If you set `MOCK_LLM=0`, the API returns a placeholder indicating real LLM integration isn't configured; extend `api.py` to call a provider when desired.
 - This folder contains the `docs/` corpus used for embeddings.
+- ChromaDB automatically persists data with `PersistentClient`, so no explicit persist() call is needed.
