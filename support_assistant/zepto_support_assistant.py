@@ -1,7 +1,12 @@
 import os
+import sys
+
+# Prevent __pycache__ directory creation
+sys.dont_write_bytecode = True
+os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+
 from sentence_transformers import SentenceTransformer
 import chromadb
-from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 
 BASE_DIR = os.path.dirname(__file__)
@@ -24,17 +29,15 @@ def load_documents(directory: str):
 
 
 def create_chromadb_collection():
-    client = chromadb.Client(Settings(
-        chroma_db_impl="duckdb+parquet",
-        persist_directory=PERSIST_DIR,
-    ))
+    # Use new PersistentClient API (replaces deprecated Settings-based client)
+    client = chromadb.PersistentClient(path=PERSIST_DIR)
 
     if COLLECTION_NAME in [col.name for col in client.list_collections()]:
         client.delete_collection(name=COLLECTION_NAME)
 
+    # HuggingFaceEmbeddingFunction in ChromaDB 0.4+ only accepts model_name
     hf = embedding_functions.HuggingFaceEmbeddingFunction(
-        model_name=MODEL_NAME,
-        model_kwargs={"device": "cpu"},
+        model_name=MODEL_NAME
     )
 
     collection = client.create_collection(
@@ -64,7 +67,7 @@ def ingest_documents():
         ids=ids,
         metadatas=metadatas,
     )
-    client.persist()
+    # Note: PersistentClient automatically persists data, no need for explicit persist() call
     print(f"Ingested {len(ids)} documents into collection '{COLLECTION_NAME}'")
     print(f"Chroma database persisted at: {PERSIST_DIR}")
 
