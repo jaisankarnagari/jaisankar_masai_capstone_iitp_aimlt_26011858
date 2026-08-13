@@ -8,7 +8,12 @@ This shows:
 4. JSON export capability
 """
 
-import json
+import jsonimport sys
+import os
+
+# Prevent __pycache__ directory creation
+sys.dont_write_bytecode = True
+os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
 from langgraph_flow import run_zepto_assistant, ZeptoAssistantOutput
 
 

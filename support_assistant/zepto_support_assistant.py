@@ -1,4 +1,10 @@
 import os
+import sys
+
+# Prevent __pycache__ directory creation
+sys.dont_write_bytecode = True
+os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb.utils import embedding_functions
@@ -29,9 +35,9 @@ def create_chromadb_collection():
     if COLLECTION_NAME in [col.name for col in client.list_collections()]:
         client.delete_collection(name=COLLECTION_NAME)
 
+    # HuggingFaceEmbeddingFunction in ChromaDB 0.4+ only accepts model_name
     hf = embedding_functions.HuggingFaceEmbeddingFunction(
-        model_name=MODEL_NAME,
-        model_kwargs={"device": "cpu"},
+        model_name=MODEL_NAME
     )
 
     collection = client.create_collection(

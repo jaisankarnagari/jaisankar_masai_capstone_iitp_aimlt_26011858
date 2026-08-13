@@ -10,6 +10,12 @@ This module implements a stateful multi-node workflow with:
 """
 
 import os
+import sys
+
+# Prevent __pycache__ directory creation
+sys.dont_write_bytecode = True
+os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+
 from typing import TypedDict, Annotated, Sequence
 from pydantic import BaseModel, Field, ValidationError
 from langgraph.graph import StateGraph, START, END
