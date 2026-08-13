@@ -3,7 +3,6 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import chromadb
-from chromadb.config import Settings
 
 BASE_DIR = os.path.dirname(__file__)
 PERSIST_DIR = os.path.join(BASE_DIR, "chroma_db")
@@ -17,7 +16,8 @@ class QueryRequest(BaseModel):
 
 
 def get_collection():
-    client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory=PERSIST_DIR))
+    # Use new PersistentClient API (replaces deprecated Settings-based client)
+    client = chromadb.PersistentClient(path=PERSIST_DIR)
     try:
         collection = client.get_collection(name=COLLECTION_NAME)
     except Exception:
