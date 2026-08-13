@@ -185,14 +185,14 @@ Additional Notes
 Summary
 - This project delivers a modular RAG pipeline with:
 
-- Document ingestion + embedding in ChromaDB
+    - Document ingestion + embedding in ChromaDB
 
-- Intent classification and retrieval via LangGraph
+    - Intent classification and retrieval via LangGraph
 
-- Structured answer generation validated by Pydantic
+    - Structured answer generation validated by Pydantic
 
-- FastAPI wrapper for serving queries
+    - FastAPI wrapper for serving queries
 
-- Dockerized deployment
+    - Dockerized deployment
 
-- Comprehensive test suites and guides
+    - Comprehensive test suites and guides
