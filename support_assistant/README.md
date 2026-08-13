@@ -82,13 +82,13 @@ Pipeline Stages
 
 MOCK_LLM Toggle
 
-    Mock Mode (MOCK_LLM=1)
+1. Mock Mode (MOCK_LLM=1)
 
     - Deterministic answers, fixed confidence, sources populated for policy queries.
 
     - No real LLM calls.
 
-Real Mode (MOCK_LLM=0)
+2. Real Mode (MOCK_LLM=0)
 
     - Calls LLM (placeholder), validates output with retries (up to 3).
 
@@ -110,7 +110,7 @@ Data Flow Diagram
 [Validated JSON Output: answer, sources, confidence]
 
 
-Testing
+Testing:
 
 Test Files
 1.  test_langgraph_flow.py → Comprehensive workflow tests (intent classification, retrieval, generation).
@@ -126,12 +126,12 @@ Test Files
 6. test.docker.py → Docker build/run instructions.
 
 Run Tests:
-    - pytest support_assistant/test_langgraph_flow.py -v
-    - python support_assistant/test_schema_validation.py
-    - python support_assistant/test_diagnostic.py
+- pytest support_assistant/test_langgraph_flow.py -v
+- python support_assistant/test_schema_validation.py
+- python support_assistant/test_diagnostic.py
 
 Task 4: Pydantic Output Schema Validation
-    class ZeptoAssistantOutput(BaseModel):
+- class ZeptoAssistantOutput(BaseModel):
         answer: str
         sources: list[str]
         confidence: float = Field(..., ge=0.0, le=1.0)
@@ -144,9 +144,9 @@ Task 4: Pydantic Output Schema Validation
 - Test Coverage: Policy vs general queries, JSON round‑trip, constraint enforcement.
 
 Task 5: FastAPI Wrapper
-    - File: wrap_graph.py
-    - Endpoint: POST /ask
-    - Input: {"query": "What is your refund policy?"}
+- File: wrap_graph.py
+- Endpoint: POST /ask
+- Input: {"query": "What is your refund policy?"}
 
     Output:
         {
